@@ -47,34 +47,45 @@ def makeArgs(beg):
         beg += " "+arg
     return beg
 
+def compressExec(cmd):
+    print(cmd)
+    c = str.encode(cmd)
+    sh = Popen([str.encode('bash')], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    out, err = sh.communicate(input = c)
+    sh.kill()
+    return err
+
 def makeBackup(fp):
     options = makeOptions()
     cmdStr = makeArgs(compress[0] + " " + options + " " + fp)
-    print("Executing:\t"+cmdStr)
-    cmd = str.encode(cmdStr)
-    sh = Popen([str.encode('bash')], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    out, err = sh.communicate(input = cmd)
-    sh.kill()
-    if err != b'':
+    err = compressExec(cmdStr)
+    if err != b"":
         print(err.decode("utf-8"))
+    else:
+        print("Successfully saved \"" + fp + "\" !")
 
-def main():
+def main(info):
     fpZip = makeBackupFp()
     makeBackup(fpZip)
+    if info == True:
+        os.remove(src[3])
+        print("Removed: " + src[3])
 
 def handleCmdLine():
+    info = False
     if "help" in argv or "-h" in argv:
         help()
     if len(argv) >= 2 and "--" not in argv[1]:
         src.append(argv[1])
+        info = True
     for arg in argv:
         if "--compress=" in arg:
             c = arg[arg.find('=')+1:]
             if c == "tar":
                 compress[0] = "tar"
                 compress[1] = ".tar.gz"
-
+    return info
 
 if __name__ == '__main__':
-    handleCmdLine()
-    main()
+    info = handleCmdLine()
+    main(info)
