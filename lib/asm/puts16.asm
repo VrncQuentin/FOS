@@ -1,5 +1,5 @@
     ;;  Recieves data in 'bx'
-puts:
+puts16:
     pusha
     mov ah, 0x0e                ; Scrolling teletype BIOS routine.
 
