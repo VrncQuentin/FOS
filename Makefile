@@ -1,78 +1,86 @@
-# Fundamentals.
+# Basics
 #################
 SHELL		?=	/bin/sh
-RM		?=	-rm -f
-ASM		?=	nasm
+RM		?=	-rm -rf
 EMUL		?=	qemu-system-x86_64
+ASM		=	nasm
+LD		=	ld
 CC		=	gcc
-LD		?=	ld
 #################
 
-# Paths.
+# Paths
 #################
-LIBC_P		=	./lib/c
-BS_P		=	./bs
-KERNEL_P	=	./kernel
+PKERNEL		=	./kernel
+PBOOTSECTOR	=	./bs
 INCLUDE_DIR	=	include
 #################
 
-
-#Flags for compilation.
+# Flags
 #################
-ASMFLAGS	=	-f bin
-CPPFLAGS	=	-iquote $(KERNEL_P)/$(INCLUDE_DIR)
+LDFLAGS		=	--oformat binary -Ttext 0x1000
 CFLAGS		=	-ffreestanding
-LDFLAGS		=	-Ttext 0x1000
+CPPFLAGS	=	-iquote $(PKERNEL)/$(INCLUDE_DIR)
 #################
 
-
-# Lib variables.
+# Sources
 #################
-#################
-
-
-# Source Files.
-#################
-BS_SRC		=	$(BS_P)/boot_sector.asm		\
-
-KERNEL_SRC	=	$(KERNEL_P)/main.c		\
+KRN_MAINS	=	$(PKERNEL)/main.c
+KRN_ENTRYS	=	$(PKERNEL)/kernel_entry.asm
+BS_MAINS	=	$(PBOOTSECTOR)/boot_sector.asm
 #################
 
-
-# Conversions to .o.
+# Obj Files
 #################
-KERNEL_OBJ	=	$(KERNEL_SRC:.c=.o)
+KRN_MAIN	=	$(PKERNEL)/main.o
+KRN_ENTRY	=	$(PKERNEL)/kernel_entry.o
+KRN_OBJ		=	$(KRN_MAIN)	\
+			$(KRN_ENTRY)	\
 #################
 
-# Binaries & lib names.
+# Important Files
 #################
 BS_NAME		=	boot_sector.bin
-KERNEL_NAME	=	kernel.bin
-OSIMG		=	fos
+KRN_NAME	=	kernel.bin
+OSIMG_NAME	=	fos
 #################
 
 
-.PHONY: run
-run:	fclean $(OSIMG)
-	$(EMUL) $(OSIMG)
+# Main Build Rules.
+.PHONY:	run
+run:	fclean $(OSIMG_NAME)
+	$(EMUL) $(OSIMG_NAME)
 
-$(BS_NAME):
-	$(ASM) $(ASMFLAGS) $(BS_SRC) -o $(BS_NAME)
+$(OSIMG_NAME): $(BS_NAME) $(KRN_NAME)
+	cat $(BS_NAME) $(KRN_NAME) > $(OSIMG_NAME)
+
+$(KRN_NAME): $(KRN_OBJ)
+	$(LD) -o $(KRN_NAME) $(LDFLAGS) $(KRN_OBJ)
+# [END] Main Build Rules.
 
 
-$(KERNEL_NAME):	$(KERNEL_OBJ)
-	$(LD) $(LDFLAGS) $(KERNEL_OBJ) --oformat binary -o $(KERNEL_NAME)
+# Obj Rules.
+$(BS_NAME): $(BS_MAINS)
+	$(ASM) $(BS_MAINS) -f bin -o $(BS_NAME)
+
+$(KRN_MAIN): $(KRN_MAINS)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $(KRN_MAINS) -s -o $(KRN_MAIN)
+
+$(KRN_ENTRY): $(KRN_ENTRYS)
+	$(ASM) $(KRN_ENTRYS) -f elf64 -o $(KRN_ENTRY)
+# [END] Obj Rules.
 
 
-$(OSIMG): $(BS_NAME) $(KERNEL_NAME)
-	cat $(BS_NAME) $(KERNEL_NAME) > $(OSIMG)
-
-.PHONY:	clean
+# Clean Rules.
+.PHONY: clean
 clean:
-	$(RM) $(KERNEL_OBJ)
+	@echo "Cleaning OBJ Files."
+	$(RM) $(KRN_OBJ)
 
 .PHONY: fclean
 fclean: clean
+	@echo "\nCleaning main Files."
+	$(RM) $(KRN_NAME)
 	$(RM) $(BS_NAME)
-	$(RM) $(KERNEL_NAME)
-	$(RM) $(OSIMG)
+	$(RM) $(OSIMG_NAME)
+	@echo ""
+# [END] Clean Rules.
