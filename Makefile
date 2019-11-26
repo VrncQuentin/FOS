@@ -48,7 +48,8 @@ OSIMG_NAME	=	fos
 # Main Build Rules.
 .PHONY:	run
 run:	fclean $(OSIMG_NAME)
-	$(EMUL) $(OSIMG_NAME)
+	@echo "\nRunning fos"
+	$(EMUL) -fda $(OSIMG_NAME)
 
 $(OSIMG_NAME): $(BS_NAME) $(KRN_NAME)
 	cat $(BS_NAME) $(KRN_NAME) > $(OSIMG_NAME)
