@@ -22,7 +22,7 @@ HEADERS		=	$(PKERNEL)/$(HEADER_DIR)	\
 # Flags
 #################
 LDFLAGS		=	--oformat binary -Ttext 0x1000
-CFLAGS		=	-ffreestanding -Wall -Wextra -Werror -O2
+CFLAGS		=	-ffreestanding -Wall -Wextra -Werror
 CPPFLAGS	=	-iquote $(HEADERS)
 NAME		=	-o $@
 #################
@@ -58,6 +58,10 @@ run:	fclean $(OSIMG_NAME)
 .PHONY: disass
 disass: $(KRN_NAME)
 	ndisasm -b 32 $<
+
+.PHONY: debug
+debug: CFLAGS += -DDEBUG
+debug: run
 # [END] Main Build Rules.
 
 
