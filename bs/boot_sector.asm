@@ -29,7 +29,7 @@ load_kernel:
     ;; excluding boot sector, from the boot disk (i.e. our kernel code )
     ;; to the adresse KERNEL_OFFSET
     mov bx, KERNEL_OFFSET
-    mov dh, 15
+    mov dh, 2                   ; Magic value, we could load more to be certain.
     mov dl, [BOOT_DRIVE]
     call load_disk
 

@@ -18,27 +18,27 @@ load_disk:
     ;; [es:bx] = pointer to buffer where the data will be stored.
     ;; Caller sets it up for us & is actually the std locate for int 0x13
     int 0x13
-    jc ld_error                 ; if carry bit (error)
+    jc disk_error                 ; if carry bit (error)
 
     pop dx
-    cmp al, dh                  ; BIOS also sets al to the # of sectors read, cmp.
+    cmp al, dh                  ; BIOS 0x13 sets al to the # of sectors read.
     jne sector_error
 
     popa
     ret
 
-ld_error:
+disk_error:
     mov bx, DISK_ERR
     call puts16
 
     mov dh, ah                  ; ah = err code, dl = disk drive that dropped the err
     call print_hex16
-    jmp $                       ; Hang & dies (maybe)
+    jmp $                       ; Hang
 
 sector_error:
     mov bx, SECTOR_ERR
     call puts16
-
+    jmp $                       ; Hang
 
     ;; DATA
     DISK_ERR db "Disk read error.",0
