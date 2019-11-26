@@ -1,5 +1,6 @@
     ;; Recieves data in 'dx' (data is an hexa number in the form 0x0000)
-print_hex:
+    [bits 16]
+print_hex16:
     pusha                       ; push all register into stack.
     mov cx, 0                   ; index variable.
 
@@ -28,11 +29,11 @@ put_in_string:
 
 phexa_done:
     mov bx, hexa_str
-    call puts
+    call puts16
 
     popa                        ; returns all register from stack.
     ret
 
     ;; Data.
 hexa_str:
-    db '0x0000',0               ; Reserve memory for our string
+    db "0x0000",0               ; Reserve memory for our string
