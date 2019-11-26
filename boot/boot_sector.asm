@@ -13,12 +13,12 @@
     call switch_to_pm           ; We never return from here.
 
     ;; Include subroutines.
-    %include "lib/asm/puts16.asm"
-    %include "lib/asm/putspm.asm"
-    %include "lib/asm/print_hex.asm"
-    %include "lib/asm/load_disk.asm"
-    %include "bs/gdt.asm"
-    %include "bs/switch_pm.asm"
+    %include "boot/utils/puts16.asm"
+    %include "boot/utils/putspm.asm"
+    %include "boot/utils/print_hex.asm"
+    %include "boot/utils/load_disk.asm"
+    %include "boot/gdt.asm"
+    %include "boot/switch_pm.asm"
 
     [bits 16]
 load_kernel:
