@@ -2,7 +2,7 @@
 #################
 SHELL		?=	/bin/sh
 RM		=	-rm -rf
-EMUL		?=	qemu-system-x86_64
+EMUL		?=	qemu-system-x86_64 -fda
 LD		=	ld
 MAKE		=	@make --silent
 #################
@@ -10,6 +10,7 @@ MAKE		=	@make --silent
 # Colors
 #################
 CN		=	\e[0m
+B		=	\e[1m
 CBB		=	\e[1;34m
 CBG		=	\e[1;92m
 CBW		=	\e[1;97m
@@ -48,11 +49,11 @@ FOS		=	fos
 .PHONY:	all
 all:	fclean builddir fos
 	@echo "$(CBY)[ FOS ] Running.$(CN)"
-	# $(EMUL) $(FOS)
+	$(EMUL) $(FOS)
 
-# .PHONY: disass
-# disass: $(KRN_NAME)
-# 	ndisasm -b 32 $<
+.PHONY: disass
+disass: $(KRN)
+	ndisasm -b 32 $<
 
 # .PHONY: debug
 # [END] Main Rules.
@@ -94,12 +95,12 @@ kernel:
 # Clean Rules.
 .PHONY: clean
 clean:
-	@echo "$(CBB)[ Cleaning OBJ Files ]$(CN)"
+	@echo "$(CBB)[ Cleaning OBJ Files ]$(CN)$(B)"
 	$(RM) $(OBJ)
 
 .PHONY: fclean
 fclean: clean
-	@echo "$(CBB)[ Cleaning Main Files ]$(CN)"
+	@echo "$(CBB)[ Cleaning Main Files ]$(CN)$(B)"
 	$(RM) $(BOOT)
 	$(RM) $(KRN)
 	$(RM) $(FOS)
