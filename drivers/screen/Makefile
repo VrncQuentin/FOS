@@ -14,7 +14,9 @@ CPPFLAGS	=	-iquote $(PHEADERS)
 # Colors
 #################
 CN		=	\e[0m
+B		=	\e[1m
 CBB		=	\e[1;34m
+CBM		=	\e[1;35m
 CBG		=	\e[1;92m
 CBW		=	\e[1;97m
 #################
@@ -41,19 +43,25 @@ OBJ		=	$(SRC:.c=.o)
 
 # Main Rules.
 ## Screen Objs.
-.PHONY:	all
-all:	$(OBJ)
+all:	disp_entry $(OBJ)
 	@mv $(OBJ) $(PBUILD)
-	@echo "$(CBB)[ Screen Driver ] Moved to builds/objs/.$(CN)"
+	@echo "$(B)        |---$(CBM)[ Screen Driver ] Moved to builds/objs/.$(CN)"
+	@echo "$(B)    |---$(CBG)[ Screen Driver ] OK.$(CN)"
 
 ## Debug
-.PHONY: debug
 debug:	CFLAGS += -DDEBUG
 debug:	all
 # [END] Main Rules.
 
 # Conversion Rule.
 %.o:	%.c
-	@echo "$(CBW)[ drivers/screen/$< ]\t==>>\t[ drivers/screen/$@ ]$(CN)"
+	@echo "$(B)        |---$(CBW)[ drivers/screen/$< ]\t==>>\t[ drivers/screen/$@ ]$(CN)"
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 # [END] Conversion Rule.
+
+# Misc.
+disp_entry:
+	@echo "$(B)    |---$(CBB)[ Screen Driver ] Building.$(CN)"
+
+.PHONY: all debug disp_entry
+# [END] Misc.

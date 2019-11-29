@@ -2,7 +2,7 @@
 #################
 SHELL		?=	/bin/sh
 RM		=	-rm -rf
-EMUL		?=	qemu-system-x86_64 -fda
+EMUL		?=	qemu-system-x86_64
 LD		=	ld
 MAKE		=	@make --silent
 #################
@@ -13,6 +13,7 @@ CN		=	\e[0m
 CBB		=	\e[1;34m
 CBG		=	\e[1;92m
 CBW		=	\e[1;97m
+CBY		=	\e[1;93m
 #################
 
 # Paths
@@ -46,16 +47,14 @@ FOS		=	fos
 # Main Rules.
 .PHONY:	all
 all:	fclean builddir fos
-	@echo "Running [ $(FOS) ]"
-	@$(EMUL) $(FOS)
+	@echo "$(CBY)[ FOS ] Running.$(CN)"
+	# $(EMUL) $(FOS)
 
 # .PHONY: disass
 # disass: $(KRN_NAME)
 # 	ndisasm -b 32 $<
 
 # .PHONY: debug
-# debug: CFLAGS += t-DDEBUG
-# debug: #TODO: Fix
 # [END] Main Rules.
 
 # OS Bootstrap.
@@ -71,31 +70,25 @@ builddir:
 ## FOS.
 .PHONY:	fos
 fos:	boot_sector kernel
-	cat $(BOOT) $(KRN) > $(FOS)
-	@echo "\n$(CBG)[ FOS ] OK.$(CN)"
+	@echo "\n$(CBB)[ FOS ] Building.$(CN)"
+	@cat $(BOOT) $(KRN) > $(FOS)
+	@echo "$(CBG)[ FOS ] OK.$(CN)"
 
 ## Boot Sector Build.
 .PHONY:	boot_sector
 boot_sector:
-	@echo "\n$(CBB)[ Boot Sector ] Building.$(CN)"
 	$(MAKE) -C $(PBOOT)
-	@echo "$(CBG)[ Boot Sector ] OK.$(CN)"
 
 ## Kernel Build.
 .PHONY:	kernel
 kernel:
 	@echo "\n$(CBB)[ Kernel ] Building.$(CN)"
-
-	@echo "$(CBB)[ Kernel's OBJ Files ] Building.$(CN)"
 	$(MAKE) -C $(PKERNEL)
-	@echo "$(CBG)[ Kernel's OBJ Files ] OK.$(CN)"
-
-	@echo "\n$(CBB)[ Driver's OBJ Files ] Building.$(CN)"
 	$(MAKE) -C $(PDRIVERS)
-	@echo "$(CBG)[ Driver's OBJ Files ] OK.$(CN)"
 
+	@echo "$(CBB)[ Kernel ] Linking Obj Files.$(CN)"
 	@$(LD) -o $(KRN) $(LDFLAGS) $(PBUILD)/objs/*.o
-	@echo "\n$(CBB)[ Kernel ] OK.$(CN)"
+	@echo "$(CBB)[ Kernel ] OK.$(CN)"
 # [END] OS Bootstrap.
 
 # Clean Rules.

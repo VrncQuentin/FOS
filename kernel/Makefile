@@ -16,7 +16,10 @@ CPPFLAGS	=	-iquote $(PHEADERS)
 # Colors
 #################
 CN		=	\e[0m
+B		=	\e[1m
 CBB		=	\e[1;34m
+CBM		=	\e[1;35m
+CBG		=	\e[1;92m
 CBW		=	\e[1;97m
 #################
 
@@ -45,11 +48,11 @@ SRC_OBJ		=	$(SRC:.c=.o)
 # Main Build Rules.
 ## Kernel Objs.
 .PHONY:	all
-all: $(ENTRY_OBJ) $(SRC_OBJ)
+all: disp_entry $(ENTRY_OBJ) $(SRC_OBJ)
 	@mv $(ENTRY_OBJ) $(PBUILD)
 	@mv $(SRC_OBJ) $(PBUILD)
-	@echo "$(CBB)[ Kernel's OBJ Files ] Moved to build/objs/.$(CN)"
-
+	@echo "$(B)    |---$(CBM)[ Kernel's OBJ Files ] Moved to build/objs/.$(CN)"
+	@echo "$(B)|---$(CBG)[ Kernel's OBJ Files ] OK.$(CN)"
 
 ## Debug.
 .PHONY: debug
@@ -61,11 +64,17 @@ debug:	all
 # Conversion Rules.
 ## ASM.
 %.o:	%.asm
-	@echo "$(CBW)[ kernel/$< ] ==>>\t[ kernel/$@ ]$(CN)"
+	@echo "$(B)    |---$(CBW)[ kernel/$< ] ==>>\t[ kernel/$@ ]$(CN)"
 	@$(ASM) $(ASMFLAGS) $< -o $@
 
 ## C.
 %.o:	%.c
-	@echo "$(CBW)[ kernel/$< ]\t ==>>\t[ kernel/$@ ]$(CN)"
+	@echo "$(B)    |---$(CBW)[ kernel/$< ]\t ==>>\t[ kernel/$@ ]$(CN)"
 	@$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 # [END] Conversion Rules.
+
+
+# Misc.
+disp_entry:
+	@echo "$(B)|---$(CBB)[ Kernel's OBJ Files ] Building.$(CN)"
+# [END] Misc.

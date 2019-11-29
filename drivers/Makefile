@@ -6,6 +6,7 @@ MAKE		=	@make --silent
 
 # Colors
 #################
+B		=	\e[1m
 CN		=	\e[0m
 CBB		=	\e[1;34m
 CBG		=	\e[1;92m
@@ -19,14 +20,19 @@ SCREEN		=	./screen
 
 
 # Main Rules.
-.PHONY:	all
-all:
-	@echo "$(CBB)[ Screen Driver ] Building.$(CN)"
+## Drivers Objs.
+all:	disp_entry
 	$(MAKE) -C $(SCREEN)
-	@echo "$(CBG)[ Screen Driver ] OK.$(CN)"
+	@echo "$(B)|---$(CBG)[ Driver's OBJ Files ] OK.$(CN)"
 
 ## Debug.
-.PHONY:	debug
 debug:	MAKE += debug
 debug:	all
 # [END] Main Rules.
+
+# Misc.
+disp_entry:
+	@echo "$(B)|\n|---$(CBB)[ Driver's OBJ Files ] Building.$(CN)"
+
+.PHONY: all debug disp_entry
+# [END] Misc.
