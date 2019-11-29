@@ -1,4 +1,5 @@
-#include "internal.h"
+#include "fos_common.h"
+#include "fos_common_types.h"
 
 /**
  * @fn uint8_t read8_port(uint16_t port)
@@ -48,7 +49,7 @@ uint16_t read16_port(uint16_t port)
  */
 void write8_port(uint16_t port, uint8_t data)
 {
-    __asm__("out %%al, %%dx": : "a" (data) : "d" (port));
+    __asm__("out %%al, %%dx" : : "a" (data), "d" (port));
 }
 
 /**
@@ -63,5 +64,5 @@ void write8_port(uint16_t port, uint8_t data)
  */
 void write16_port(uint16_t port, uint16_t data)
 {
-    __asm__("out %%ax, %%dx": : "a" (data) : "d" (port));
+    __asm__("out %%ax, %%dx" : : "a" (data), "d" (port));
 }

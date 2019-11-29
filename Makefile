@@ -1,109 +1,115 @@
 # Basics
 #################
 SHELL		?=	/bin/sh
-RM		?=	-rm -rf
+RM		=	-rm -rf
 EMUL		?=	qemu-system-x86_64 -fda
-ASM		=	nasm
 LD		=	ld
-CC		=	gcc
+MAKE		=	@make --silent
+#################
+
+# Colors
+#################
+CN		=	\e[0m
+CBB		=	\e[1;34m
+CBG		=	\e[1;92m
+CBW		=	\e[1;97m
 #################
 
 # Paths
 #################
-PBOOT		=	./boot
-PKERNEL		=	./kernel
-PDRIVERS	=	./drivers
-
-HEADER_DIR	=	include
-HEADERS		=	$(PKERNEL)/$(HEADER_DIR)	\
-			$(PDRIVERS)/$(HEADER_DIR)
+PBUILD		=	build
+PBOBJ		=	$(PBUILD)/objs
+PBOOT		=	boot
+PKERNEL		=	kernel
+PDRIVERS	=	drivers
 #################
 
 # Flags
 #################
 LDFLAGS		=	--oformat binary -Ttext 0x1000
-CFLAGS		=	-ffreestanding -Wall -Wextra -Werror
-CPPFLAGS	=	-iquote $(HEADERS)
-NAME		=	-o $@
-#################
-
-# Sources
-#################
-BOOT_SRC	=	$(PBOOT)/boot_sector.asm
-KRN_ENTRY	=	$(PKERNEL)/krn_entry.asm
-KRN_SRC		=	$(PKERNEL)/main.c	\
 #################
 
 # Obj Files
 #################
-BOOT_NAME	=	$(BOOT_SRC:.asm=.bin)
-KRN_OBJ		=	$(KRN_SRC:.c=.o)
-KRN_EOBJ	=	$(KRN_ENTRY:.asm=.o)
+OBJ		=	$(PBOBJ)/*.o
 #################
 
 # Important Files
 #################
-KRN_NAME	=	kernel.bin
-OSIMG_NAME	=	fos
+BOOT		=	$(PBUILD)/boot_sector.bin
+KRN		=	$(PBUILD)/kernel.bin
+FOS		=	fos
 #################
 
 
 # $< = first dependancy | $@ = target file | $^ = All dependancy
-# Main Build Rules.
-.PHONY:	run
-run:	fclean $(OSIMG_NAME)
-	@echo "Running [ $(OSIMG_NAME) ]"
-	@$(EMUL) $(OSIMG_NAME)
+# Main Rules.
+.PHONY:	all
+all:	fclean builddir fos
+	@echo "Running [ $(FOS) ]"
+	@$(EMUL) $(FOS)
 
-.PHONY: disass
-disass: $(KRN_NAME)
-	ndisasm -b 32 $<
+# .PHONY: disass
+# disass: $(KRN_NAME)
+# 	ndisasm -b 32 $<
 
-.PHONY: debug
-debug: CFLAGS += -DDEBUG
-debug: run
-# [END] Main Build Rules.
+# .PHONY: debug
+# debug: CFLAGS += t-DDEBUG
+# debug: #TODO: Fix
+# [END] Main Rules.
 
+# OS Bootstrap.
+## Build Dir Preparation.
+.PHONY:	builddir
+builddir:
+	@echo "\n$(CBB)[ Build Directory ] Preparing.$(CN)"
+	-@mkdir $(PBUILD) &>/dev/null
+	-@mkdir $(PBUILD)/objs &>/dev/null
+	@sleep 0.25
+	@echo "$(CBG)[ Build Directory ] OK.$(CN)"
 
-# Important Build Rules.
-$(OSIMG_NAME): $(BOOT_NAME) $(KRN_NAME)
-	@echo "\nMaking [ $@ ]"
-	@cat $^ > $@
+## FOS.
+.PHONY:	fos
+fos:	boot_sector kernel
+	cat $(BOOT) $(KRN) > $(FOS)
+	@echo "\n$(CBG)[ FOS ] OK.$(CN)"
 
+## Boot Sector Build.
+.PHONY:	boot_sector
+boot_sector:
+	@echo "\n$(CBB)[ Boot Sector ] Building.$(CN)"
+	$(MAKE) -C $(PBOOT)
+	@echo "$(CBG)[ Boot Sector ] OK.$(CN)"
 
-$(KRN_NAME): $(KRN_OBJ) $(KRN_EOBJ)
-	@echo "\nLinking $^ into [ $@ ]"
-	@$(LD) $(NAME) $(LDFLAGS) $^
-# [END] Important Build Rules.
+## Kernel Build.
+.PHONY:	kernel
+kernel:
+	@echo "\n$(CBB)[ Kernel ] Building.$(CN)"
 
+	@echo "$(CBB)[ Kernel's OBJ Files ] Building.$(CN)"
+	$(MAKE) -C $(PKERNEL)
+	@echo "$(CBG)[ Kernel's OBJ Files ] OK.$(CN)"
 
-# Obj Rules.
-%.bin:	%.asm
-	@echo "Compiling $< to [ $@ ]"
-	@$(ASM) $^ -f bin $(NAME)
+	@echo "\n$(CBB)[ Driver's OBJ Files ] Building.$(CN)"
+	$(MAKE) -C $(PDRIVERS)
+	@echo "$(CBG)[ Driver's OBJ Files ] OK.$(CN)"
 
-%.o:	%.c
-	@echo "Compiling $< to [ $@ ]"
-	@$(CC) $(CFLAGS) $(CPPFLAGS) -c $< $(NAME)
-
-%.o:	%.asm
-	@echo "Compiling $< to [ $@ ]"
-	@$(ASM) $< -f elf64 $(NAME)
-# [END] Obj Rules.
-
+	@$(LD) -o $(KRN) $(LDFLAGS) $(PBUILD)/objs/*.o
+	@echo "\n$(CBB)[ Kernel ] OK.$(CN)"
+# [END] OS Bootstrap.
 
 # Clean Rules.
 .PHONY: clean
 clean:
-	@echo "Cleaning OBJ Files."
-	$(RM) $(KRN_OBJ)
-	$(RM) $(KRN_EOBJ)
+	@echo "$(CBB)[ Cleaning OBJ Files ]$(CN)"
+	$(RM) $(OBJ)
 
 .PHONY: fclean
 fclean: clean
-	@echo "\nCleaning main Files."
-	$(RM) $(BOOT_NAME)
-	$(RM) $(KRN_NAME)
-	$(RM) $(OSIMG_NAME)
-	@echo ""
+	@echo "$(CBB)[ Cleaning Main Files ]$(CN)"
+	$(RM) $(BOOT)
+	$(RM) $(KRN)
+	$(RM) $(FOS)
+	$(RM) $(PBUILD)
+	@echo "$(CBG)[ Repository is all clean! Enjoy :) ]$(CN)"
 # [END] Clean Rules.

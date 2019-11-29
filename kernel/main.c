@@ -1,8 +1,9 @@
-#include "internal.h"
+#include "fos_common_types.h"
+#include "drivers/screen.h"
 
 void main(void)
 {
-    char *vm = (char*)VIDEO_MEM;
-
-    *vm = 'X';
+    for (;;) {
+        print("hello world!\n");
+    }
 }
