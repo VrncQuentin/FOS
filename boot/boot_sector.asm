@@ -13,12 +13,12 @@
     call switch_to_pm           ; We never return from here.
 
     ;; Include subroutines.
-    %include "utils/puts16.asm"
-    %include "utils/putspm.asm"
-    %include "utils/print_hex.asm"
-    %include "utils/load_disk.asm"
-    %include "gdt.asm"
-    %include "switch_pm.asm"
+    %include "boot/utils/puts16.asm"
+    %include "boot/utils/putspm.asm"
+    %include "boot/utils/print_hex.asm"
+    %include "boot/utils/load_disk.asm"
+    %include "boot/gdt.asm"
+    %include "boot/switch_pm.asm"
 
     [bits 16]
 load_kernel:
@@ -43,7 +43,7 @@ begin_pm:
 
     call KERNEL_OFFSET          ; Jump to where we loaded our Kernel.
 
-    jmp $                       ; Hang
+    hlt                       ; Hang
 
     ;; DATA
 KERNEL_OFFSET:  equ 0x1000    ; Memory offset to which we'll load our kernel.

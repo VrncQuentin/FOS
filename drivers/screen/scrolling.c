@@ -7,11 +7,11 @@ fos_offset handle_scrolling(fos_offset off)
     if (off < (2 * SCR_SURFACE)) return off;
 
     char *vidmem = (char *)VID_MEMADDR;
-    memcpy(vidmem, vidmem + MAX_COLS, (SCR_SURFACE - MAX_COLS));
+    memcpy(vidmem, vidmem + (MAX_COLS * 2), (SCR_SURFACE - MAX_COLS) * 2);
 
-    vidmem += SCR_SURFACE - MAX_COLS;
-    for (int i = 0; i != MAX_COLS; i += 1)
+    vidmem += (SCR_SURFACE - MAX_COLS) * 2;
+    for (int i = 0; i != MAX_COLS * 2; i += 1)
         vidmem[i] = 0;
 
-    return off - 2 * MAX_COLS;
+    return off - MAX_COLS * 2;
 }

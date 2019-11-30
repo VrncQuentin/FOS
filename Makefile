@@ -3,8 +3,9 @@
 SHELL		?=	/bin/sh
 RM		=	-rm -rf
 EMUL		?=	qemu-system-x86_64 -fda
+ASM		=	nasm
+CC		=	gcc
 LD		=	ld
-MAKE		=	@make --silent
 #################
 
 # Colors
@@ -21,24 +22,38 @@ CBY		=	\e[1;93m
 #################
 PBUILD		=	build
 PBOBJ		=	$(PBUILD)/objs
+PHEADERS	=	include
 PBOOT		=	boot
 PKERNEL		=	kernel
 PDRIVERS	=	drivers
+PSCREEN		=	$(PDRIVERS)/screen
 #################
 
 # Flags
 #################
 LDFLAGS		=	--oformat binary -Ttext 0x1000
+ASMFLAGS	=	-f
+CFLAGS		=	-ffreestanding -Wall -Wextra -Werror -Wshadow
+CPPFLAGS	=	-iquote $(PHEADERS)
 #################
+
+# Src
+#################
+BOOT_SRC	=	$(PBOOT)/boot_sector.asm
+KRN_ENTRY	=	$(PKERNEL)/krn_entry.asm
+KRN_SRC		=	$(PKERNEL)/main.c		\
+#################
+
 
 # Obj Files
 #################
-OBJ		=	$(PBOBJ)/*.o
+KRNE_OBJ	=	$(KRN_ENTRY:.asm=.o)
+KRN_OBJ		=	$(KRN_SRC:.c=.o)
 #################
 
 # Important Files
 #################
-BOOT		=	$(PBUILD)/boot_sector.bin
+BOOT		=	$(BOOT_SRC:.asm=.bin)
 KRN		=	$(PBUILD)/kernel.bin
 FOS		=	fos
 #################
@@ -70,25 +85,28 @@ builddir:
 
 ## FOS.
 .PHONY:	fos
-fos:	boot_sector kernel
+fos:	$(BOOT) kernel
 	@echo "\n$(CBB)[ FOS ] Building.$(CN)"
-	@cat $(BOOT) $(KRN) > $(FOS)
+	@cat $(PBUILD)/boot_sector.bin $(KRN) > $(FOS)
 	@echo "$(CBG)[ FOS ] OK.$(CN)"
 
 ## Boot Sector Build.
-.PHONY:	boot_sector
-boot_sector:
-	$(MAKE) -C $(PBOOT)
+%.bin:	%.asm
+	$(ASM) $(ASMFLAGS) bin $^ -o $@
+	mv $@ $(PBUILD)
 
+%.o:	%.asm
+	$(ASM) $(ASMFLAGS) elf64 $^ -o $@
+	mv $@ $(PBOBJ)
+
+%.o:	%.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $^ -o $@
+	mv $@ $(PBOBJ)
 ## Kernel Build.
 .PHONY:	kernel
-kernel:
-	@echo "\n$(CBB)[ Kernel ] Building.$(CN)"
-	$(MAKE) -C $(PKERNEL)
-	$(MAKE) -C $(PDRIVERS)
-
+kernel:	$(KRN_OBJ) $(KRNE_OBJ) $(DRIVERS_OBJ)
 	@echo "$(CBB)[ Kernel ] Linking Obj Files.$(CN)"
-	@$(LD) -o $(KRN) $(LDFLAGS) $(PBUILD)/objs/*.o
+	@$(LD) -o $(KRN) $(LDFLAGS) $(PBOBJ)/*.o
 	@echo "$(CBB)[ Kernel ] OK.$(CN)"
 # [END] OS Bootstrap.
 
@@ -96,7 +114,7 @@ kernel:
 .PHONY: clean
 clean:
 	@echo "$(CBB)[ Cleaning OBJ Files ]$(CN)$(B)"
-	$(RM) $(OBJ)
+	$(RM) $(PBOBJ)
 
 .PHONY: fclean
 fclean: clean

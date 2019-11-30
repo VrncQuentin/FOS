@@ -37,6 +37,6 @@ void print_at(char const *s, int x, int y)
     }
 
     while (*s) {
-        print_char(*s++, x, y, WOB);
+        print_char(*s++, WOB, x, y);
     }
 }
