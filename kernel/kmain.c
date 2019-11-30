@@ -1,4 +1,4 @@
-#include "fos_common_types.h"
+#include "fos_common.h"
 #define VID_MEMADDR      (0xb8000)             /*!< Start of the Video Memory. */
 #define MAX_COLS         (80)                  /*!< Width, aka 'x'.*/
 #define MAX_ROWS         (25)                  /*!< Height, aka 'y'. */
@@ -86,7 +86,7 @@ static void set_cursor(int off)
 /*     } */
 /* } */
 
-void main(void)
+void kmain(void)
 {
     const char *str = "my first kernel";
 	char *vidptr = (char*)0xb8000; 	//video mem begins here.

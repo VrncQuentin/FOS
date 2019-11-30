@@ -2,7 +2,7 @@
 #################
 SHELL		?=	/bin/sh
 RM		=	-rm -rf
-EMUL		?=	qemu-system-x86_64 -fda
+EMUL		?=	qemu-system-x86_64 -k
 ASM		=	nasm
 CC		=	gcc
 LD		=	ld
@@ -23,7 +23,6 @@ CBY		=	\e[1;93m
 PBUILD		=	build
 PBOBJ		=	$(PBUILD)/objs
 PHEADERS	=	include
-PBOOT		=	boot
 PKERNEL		=	kernel
 PDRIVERS	=	drivers
 PSCREEN		=	$(PDRIVERS)/screen
@@ -32,16 +31,15 @@ PSCREEN		=	$(PDRIVERS)/screen
 # Flags
 #################
 LDFLAGS		=	--oformat binary -Ttext 0x1000
-ASMFLAGS	=	-f
+ASMFLAGS	=	-f elf64
 CFLAGS		=	-ffreestanding -Wall -Wextra -Werror -Wshadow
 CPPFLAGS	=	-iquote $(PHEADERS)
 #################
 
 # Src
 #################
-BOOT_SRC	=	$(PBOOT)/boot_sector.asm
-KRN_ENTRY	=	$(PKERNEL)/krn_entry.asm
-KRN_SRC		=	$(PKERNEL)/main.c		\
+KRN_ENTRY	=	$(PKERNEL)/kentry.asm
+KRN_SRC		=	$(PKERNEL)/kmain.c
 #################
 
 
@@ -53,21 +51,19 @@ KRN_OBJ		=	$(KRN_SRC:.c=.o)
 
 # Important Files
 #################
-BOOT		=	$(BOOT_SRC:.asm=.bin)
-KRN		=	$(PBUILD)/kernel.bin
-FOS		=	fos
+FOS		=	$(PBUILD)/FOS.bin
 #################
 
 
 # $< = first dependancy | $@ = target file | $^ = All dependancy
 # Main Rules.
 .PHONY:	all
-all:	fclean builddir fos
+all:	fclean builddir $(FOS)
 	@echo "$(CBY)[ FOS ] Running.$(CN)"
 	$(EMUL) $(FOS)
 
 .PHONY: disass
-disass: $(KRN)
+disass: $(FOS)
 	ndisasm -b 32 $<
 
 # .PHONY: debug
@@ -79,36 +75,28 @@ disass: $(KRN)
 builddir:
 	@echo "\n$(CBB)[ Build Directory ] Preparing.$(CN)"
 	-@mkdir $(PBUILD) &>/dev/null
-	-@mkdir $(PBUILD)/objs &>/dev/null
+	-@mkdir $(PBOBJ)  &>/dev/null
 	@sleep 0.25
 	@echo "$(CBG)[ Build Directory ] OK.$(CN)"
 
 ## FOS.
-.PHONY:	fos
-fos:	$(BOOT) kernel
-	@echo "\n$(CBB)[ FOS ] Building.$(CN)"
-	@cat $(PBUILD)/boot_sector.bin $(KRN) > $(FOS)
+$(FOS):	$(KRNE_OBJ) $(KRN_OBJ)
+	@echo "\n$(CBB)[ FOS ] Building .$(CN)"
+	@echo "$(CBB)[ Kernel ] Linking Obj Files.$(CN)"
+	@$(LD) -o $(FOS) $(LDFLAGS) $(PBOBJ)/*.o
+	@echo "$(CBB)[ Kernel ] OK.$(CN)"
 	@echo "$(CBG)[ FOS ] OK.$(CN)"
+# [END] OS Bootstrap.
 
-## Boot Sector Build.
-%.bin:	%.asm
-	$(ASM) $(ASMFLAGS) bin $^ -o $@
-	mv $@ $(PBUILD)
-
+# Conversion Rules.
 %.o:	%.asm
-	$(ASM) $(ASMFLAGS) elf64 $^ -o $@
-	mv $@ $(PBOBJ)
+	$(ASM) $(ASMFLAGS) $^ -o $@
+	@mv $@ $(PBOBJ)
 
 %.o:	%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $^ -o $@
-	mv $@ $(PBOBJ)
-## Kernel Build.
-.PHONY:	kernel
-kernel:	$(KRN_OBJ) $(KRNE_OBJ) $(DRIVERS_OBJ)
-	@echo "$(CBB)[ Kernel ] Linking Obj Files.$(CN)"
-	@$(LD) -o $(KRN) $(LDFLAGS) $(PBOBJ)/*.o
-	@echo "$(CBB)[ Kernel ] OK.$(CN)"
-# [END] OS Bootstrap.
+	@mv $@ $(PBOBJ)
+# [END] Conversion Rules.
 
 # Clean Rules.
 .PHONY: clean
@@ -119,8 +107,6 @@ clean:
 .PHONY: fclean
 fclean: clean
 	@echo "$(CBB)[ Cleaning Main Files ]$(CN)$(B)"
-	$(RM) $(BOOT)
-	$(RM) $(KRN)
 	$(RM) $(FOS)
 	$(RM) $(PBUILD)
 	@echo "$(CBG)[ Repository is all clean! Enjoy :) ]$(CN)"
