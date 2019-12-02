@@ -1,7 +1,7 @@
 # Basics
 #################
 SHELL		?=	/bin/sh
-RM		?=	-rm -rf
+RM		?=	-rm -f
 EMUL		?=	qemu-system-x86_64 -fda
 ASM		=	nasm
 LD		=	ld
