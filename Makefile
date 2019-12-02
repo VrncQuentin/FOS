@@ -2,7 +2,17 @@
 #################
 SHELL		?=	/bin/sh
 RM		=	-rm -rf
-EMUL		?=	qemu-system-x86_64 -k
+EMUL		?=\
+qemu-system-i386					\
+	-accel tcg,thread=single			\
+	-cpu core2duo					\
+	-m 128						\
+	-no-reboot					\
+	-drive format=raw,media=cdrom,file=myos.iso	\
+	-serial stdio					\
+	-smp 1						\
+	-usb						\
+	-vga std
 ASM		=	nasm
 CC		=	gcc
 LD		=	ld

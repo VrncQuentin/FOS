@@ -1,116 +1,80 @@
 #include "fos_common.h"
-#define VID_MEMADDR      (0xb8000)             /*!< Start of the Video Memory. */
-#define MAX_COLS         (80)                  /*!< Width, aka 'x'.*/
-#define MAX_ROWS         (25)                  /*!< Height, aka 'y'. */
-#define SCR_SURFACE      (MAX_COLS * MAX_ROWS) /*!< Total cells in the screen. */
 
-#define WOB              (0x0f) /*!< Attribute: White on Black. */
+typedef enum {
+    VGA_CBLACK   = 0,
+    VGA_CBLUE    = 1,
+    VGA_CGREEN   = 2,
+    VGA_CCYAN    = 3,
+    VGA_CRED     = 4,
+    VGA_CMAGENTA = 5,
+    VGA_CBROWN   = 6,
+    VGA_CWHITE   = 15,
 
-/// SCR_OFFSET calculate the offset from #VID_MEMADDR of the pos {x, y}.
-#define SCR_OFFSET(x, y) ((y * MAX_COLS + x) * 2)
-#define NEW_LINE(off) (SCR_OFFSET(MAX_COLS - 1, off / (2*MAX_COLS)))
-#define REG_SCREEN_CTRL ((uint16_t)0x3D4)
-#define REG_SCREEN_DATA ((uint16_t)0x3D5)
+    VGA_CDGREY    = 8, // Color Dark = CD
+    VGA_CLGREY    = 7, // Color Light = CL
+    VGA_CLBLUE    = 9,
+    VGA_CLGREEN   = 10,
+    VGA_CLCYAN    = 11,
+    VGA_CLRED     = 12,
+    VGA_CLMAGENTA = 13,
+    VGA_CLBROWN   = 14,
+} vga_color;
 
-/* static uint8_t read8_port(uint16_t port) */
-/* { */
-/*     uint8_t b = 0; */
+#define VIDMEM_ADDR  (0xb8000)
+#define TERM_MAX_X   (80)
+#define TERM_MAX_Y   (25)
+#define OFFSET(x, y) (y * TERM_MAX_X + x)
 
-/*     __asm__("in %%dx, %%al" : "=a" (b) : "d" (port)); */
-/*     return b; */
-/* } */
-
-static void write8_port(uint16_t port, uint8_t data)
+static uint8_t vga_entry_color(vga_color fg, vga_color bg)
 {
-    __asm__("out %%al, %%dx" : : "a" (data), "d" (port));
+    return fg | (bg << 4);
 }
 
-/* static int get_cursor(void) */
-/* { */
-/*     int off = 0; */
-
-/*     write8_port(REG_SCREEN_CTRL, 14); */
-/*     off = read8_port(REG_SCREEN_DATA) << 8; */
-
-/*     write8_port(REG_SCREEN_CTRL, 15); */
-/*     off += read8_port(REG_SCREEN_DATA); */
-
-/*     return off * 2; */
-/* } */
-
-static void set_cursor(int off)
+static uint16_t vga_entry(unsigned char uc, uint8_t color)
 {
-    off /= 2;
-
-    write8_port(REG_SCREEN_CTRL, 14);
-    write8_port(REG_SCREEN_DATA, off >> 8);
-
-    write8_port(REG_SCREEN_CTRL, 15);
-    write8_port(REG_SCREEN_DATA, (off << 8) >> 8);
+    return (uint16_t)uc | ((uint16_t)color << 8);
 }
 
-/* int handle_scrolling(int off) */
-/* { */
-/*     if (off < (2 * SCR_SURFACE)) return off; */
+static size_t strlen(char const *str)
+{
+    char const *end = str;
 
-/*     char *vidmem = (char*)VID_MEMADDR; */
-/*     memcpy(vidmem, vidmem + (MAX_COLS * 2), (SCR_SURFACE - MAX_COLS) * 2); */
+    for (; *end; end += 1);
+    return end - str;
+}
 
-/*     vidmem += ((SCR_SURFACE - MAX_COLS) * 2); */
-/*     for (int i = 0; i != MAX_COLS * 2; i += 1) */
-/*         vidmem[i] = 0; */
+typedef struct {
+    size_t x;
+    size_t y;
+    uint16_t *buff;
+    uint8_t color;
+} terminfo;
 
-/*     return off - MAX_COLS * 2; */
-/* } */
+static void term_init(terminfo *t)
+{
+    t->buff = (uint16_t*)VIDMEM_ADDR;
+    t->color = vga_entry_color(VGA_CWHITE, VGA_CBLACK);
 
-/* static void printchar(char c, char attr) */
-/* { */
-/*     char *vidmem = (char*)VID_MEMADDR; */
-/*     int offset = get_cursor(); */
+    for (int y = 0; y != TERM_MAX_Y; y += 1)
+        for (int x = 0; x != TERM_MAX_X; x += 1)
+            t->buff = vga_entry(' ', t->color);
+}
+
+static void term_putc(char c)
+{
     
-/*     if (c == '\n') { */
-/*         offset = NEW_LINE(offset); */
-/*     } else { */
-/*         vidmem[offset] = c; */
-/*         vidmem[offset+1] = attr; */
-/*     } */
-/*     /\* offset += 2; *\/ */
-/*     /\* offset = handle_scrolling(offset); *\/ */
-/*     /\* set_cursor(offset); *\/ */
-/* } */
+}
 
-/* static void print(char const *s) */
-/* { */
-/*     while (*s) { */
-/*         printchar(*s++, WOB); */
-/*     } */
-/* } */
+static void term_puts(char const *str)
+{
+    while (*str)
+        term_putc(*str++);
+}
 
 void kmain(void)
 {
-    const char *str = "my first kernel";
-	char *vidptr = (char*)0xb8000; 	//video mem begins here.
-	unsigned int i = 0;
-	unsigned int j = 0;
+    terminfo t = {0};
 
-	/* this loops clears the screen
-	* there are 25 lines each of 80 columns; each element takes 2 bytes */
-	while(j < 80 * 25 * 2) {
-		/* blank character */
-		vidptr[j] = 0x07;
-		/* attribute-byte - light grey on black screen */
-		vidptr[j+1] = ' ';
-		j = j + 2;
-	}
-
-        j = 0;
-        set_cursor(j);
-	/* this loop writes the string to video memory */
-	while(str[i] != '\0') {
-		/* the character's ascii */
-		/* attribute-byte: give character black bg and light grey fg */
-		vidptr[j+1] = str[i];
-		++i;
-		j = j + 2;
-	}
+    term_init(&t);
+    term_puts("Hello world!\n");
 }
